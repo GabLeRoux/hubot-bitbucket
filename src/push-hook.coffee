@@ -11,22 +11,21 @@
 # Author:
 #   andrewtarry
 #
-push = require '../lib/Push'
+Push = require '../lib/Push'
 
 module.exports = (robot) ->
-
   bitbucketPushUrl = process.env.HUBOT_BITBUCKET_PUSH_URL or '/bitbucket/push'
-  bitbucketPushEvent = process.env.HUBOT_BITBUCKET_PUSH_EVENT or'bitbucketPushReceived'
+  bitbucketPushEvent = process.env.HUBOT_BITBUCKET_PUSH_EVENT or 'bitbucketPushReceived'
 
   # Listen for bitbucket sending a commit
   #
   # The push listener will only parse the body and emit an event to be picked
   # up elsewhere
   robot.router.post bitbucketPushUrl, (req, res) ->
-
-    push = push.parse req.body
+    push = Push.parse req.body
 
     robot.emit bitbucketPushEvent,
-      push: push
+      "push": push, # validated push object
+      "res": req.body # in case you prefer using json response directly
 
     res.send 'OK'
