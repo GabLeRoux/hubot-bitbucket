@@ -11,7 +11,7 @@
 # Author:
 #   andrewtarry
 #
-Push = require '../lib/Push'
+# Push = require '../lib/Push'
 
 module.exports = (robot) ->
   bitbucketPushUrl = process.env.HUBOT_BITBUCKET_PUSH_URL or '/bitbucket/push'
@@ -22,10 +22,10 @@ module.exports = (robot) ->
   # The push listener will only parse the body and emit an event to be picked
   # up elsewhere
   robot.router.post bitbucketPushUrl, (req, res) ->
-    push = Push.parse req.body
+    # push = Push.parse req.body
 
     robot.emit bitbucketPushEvent,
-      "push": push, # validated push object
+      # "push": push, # validated push object
       "res": req.body # in case you prefer using json response directly
 
     res.send 'OK'
