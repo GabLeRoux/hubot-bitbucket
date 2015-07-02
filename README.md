@@ -65,39 +65,65 @@ If you want hubot to write to your chat room a message like this:
 Add `["hubot-bitbucket-commit"]` to `hubot-scripts.json` (or whatever you want) and add an event listener like this
 
 ```coffeescript
-# scripts/hubot-bitbucket-commit.coffee
+# Description:
+#   Hubot will listen for bitbucket webhooks!
+#
+# Configuration:
+#   HUBOT_BITBUCKET_PUSH_ROOM room where to post
+#   HUBOT_BITBUCKET_PUSH_EVENT event to emit when a push is made
+#
+# Commands:
+#   None
+#
+# Author:
+#   GabLeRoux
+#
+
+# https://github.com/slackhq/hubot-slack/issues/114 wtf slack...
 module.exports = (robot) ->
   bitbucketPushEvent = process.env.HUBOT_BITBUCKET_PUSH_EVENT or 'bitbucketPushReceived'
   room = process.env.HUBOT_BITBUCKET_PUSH_ROOM or 'general'
 
   robot.on bitbucketPushEvent, (data) ->
-    response = ""
-    push = data.res # using json data directly here
-    prefix = "[#{push.canon_url}#{push.repository.absolute_url}|#{push.repository.absolute_url}]"
-    if (push.commits.length > 1)
-      response += robot.messageRoom "general", "#{prefix} #{push.commits.length} new commits"
+    res = data.res # using json data directly here
+    repo_name = res.repository.full_name
+    repo_url = res.repository.links.html.href
+    commits_url = res.push.changes[0].links.html.href
 
-    for commit in push.commits
-      sha_link = "<#{push.canon_url}#{push.repository.absolute_url}commits/#{commit.raw_node}|#{commit.node}>"
-      modified = if commit.files.length > 1 then " - #{commit.files.length} files modified" else " - #{commit.files.length} file modified"
-      author = " - #{commit.author}"
-      response += "#{prefix} #{sha_link} #{commit.message}\n#{modified}\n#{author}\n"
+    response = "[#{repo_name}] #{repo_url}\n"
 
+    commit = res.push.changes[0].new
+    new_commit_author_username = commit.target.author.user.username
+    new_commit_author_display_name = commit.target.author.user.display_name
+    new_commit_author_url = commit.target.author.user.links.html.href
+    new_commit_hash = commit.target.hash
+    new_commit_hash_short = new_commit_hash.substring 0,7
+    new_commit_message = commit.target.message
+
+    new_commit_type = commit.type
+    new_commit_name = commit.name
+    new_commit_on = new_commit_type + " " + new_commit_name
+
+    response += "New commit(s) on #{new_commit_on}\n"
+    response += "#{commits_url}\n"
+    response += "#{new_commit_hash_short} #{new_commit_message}\n"
+    response += " - #{new_commit_author_display_name} (#{new_commit_author_username})\n"
+    
     robot.messageRoom room, response
 
-# Below is using hubot-bitbucket's Push object, but it's lacking informations
+    return
+  return
+```
 
-#    push = data.push # using validated push object
-#    prefix = "[<#{push.repo.url}|#{push.repo.name}>]"
-#
-#    if (push.commits.length > 1)
-#      response += robot.messageRoom room, "#{prefix} #{push.commits.length} new commits"
-#
-#    for commit in push.commits
-#      console.log commit
-#      modified = if commit.files.length > 1 then "#{commit.files.length} files modified" else "#{commit.files.length} file modified"
-#      author = " - #{commit.author}"
-#      response += "#{prefix} #{commit.message}\n#{modified}\n#{author}\n"
-#
-#    robot.messageRoom room, response
+It should display something like this:
+```
+[gableroux/some-repository] https://bitbucket.org/gableroux/some-repository
+New commit(s) on branch master
+https://bitbucket.org/gableroux/some-repository/branches/compare/2ad9d60ef4f9369c5668c9dd9e3798c91e4f30cd..14c2888e3c6678d26c1b65c9f45cd5bad79b8370
+2ad9d60 Some commit message
+
+* Support for multiline commit message
+* Some other content in commit message, etc.
+
+- Gabriel Le Breton (gableroux)
 ```
