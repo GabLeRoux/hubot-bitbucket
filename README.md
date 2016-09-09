@@ -58,7 +58,7 @@ You can listen for the event and use as much of the data as you want.
 
 If you want hubot to write to your chat room a message like this:
 
-> hubot: [repo_owner/repo] <#sha|link> commit message
+> hubot: [repo_owner/repo] <link|#sha> commit message
 > commit description
 > - commit author
 
@@ -79,7 +79,6 @@ Add `["hubot-bitbucket-commit"]` to `hubot-scripts.json` (or whatever you want) 
 #   GabLeRoux
 #
 
-# https://github.com/slackhq/hubot-slack/issues/114 wtf slack...
 module.exports = (robot) ->
   bitbucketPushEvent = process.env.HUBOT_BITBUCKET_PUSH_EVENT or 'bitbucketPushReceived'
   room = process.env.HUBOT_BITBUCKET_PUSH_ROOM or 'general'
@@ -89,8 +88,6 @@ module.exports = (robot) ->
     repo_name = res.repository.full_name
     repo_url = res.repository.links.html.href
     commits_url = res.push.changes[0].links.html.href
-
-    response = "[#{repo_name}] #{repo_url}\n"
 
     commit = res.push.changes[0].new
     new_commit_author_username = commit.target.author.user.username
@@ -104,11 +101,11 @@ module.exports = (robot) ->
     new_commit_name = commit.name
     new_commit_on = new_commit_type + " " + new_commit_name
 
+    response = "<#{repo_url}|[#{repo_name}]>\n"
     response += "New commit(s) on #{new_commit_on}\n"
-    response += "#{commits_url}\n"
-    response += "#{new_commit_hash_short} #{new_commit_message}\n"
-    response += " - #{new_commit_author_display_name} (#{new_commit_author_username})\n"
-    
+    response += "<#{commits_url}|#{new_commit_hash_short}> #{new_commit_message}\n"
+    response += " - <#{new_commit_author_url}|#{new_commit_author_display_name} (#{new_commit_author_username})>\n"
+
     robot.messageRoom room, response
 
     return
@@ -117,10 +114,9 @@ module.exports = (robot) ->
 
 It should display something like this:
 ```
-[gableroux/some-repository] https://bitbucket.org/gableroux/some-repository
+<https://bitbucket.org/gableroux/some-repository|[gableroux/some-repository]>
 New commit(s) on branch master
-https://bitbucket.org/gableroux/some-repository/branches/compare/2ad9d60ef4f9369c5668c9dd9e3798c91e4f30cd..14c2888e3c6678d26c1b65c9f45cd5bad79b8370
-2ad9d60 Some commit message
+<https://bitbucket.org/gableroux/some-repository/branches/compare/2ad9d60ef4f9369c5668c9dd9e3798c91e4f30cd..14c2888e3c6678d26c1b65c9f45cd5bad79b8370|2ad9d60> Some commit message
 
 * Support for multiline commit message
 * Some other content in commit message, etc.
